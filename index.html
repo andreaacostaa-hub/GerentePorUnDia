@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerente por un día · Café Andino</title>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#1b0f3d; --bg2:#0c2b52; --panel:#2a1460; --pink:#ff4fa3; --yellow:#ffd23f; --orange:#ff7a1a;
+    --cyan:#1ed6ff; --green:#2ee87a; --red:#ff4d5e; --violet:#8b5cff; --ink:#24104a; --cream:#fff6e6;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:'Nunito',system-ui,sans-serif;color:var(--cream);
+    background:radial-gradient(circle at 20% 10%,#3a1c86 0,transparent 45%),radial-gradient(circle at 85% 90%,#0f4a7a 0,transparent 45%),var(--bg1)}
+  body{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px}
+  #wrap{position:relative;width:min(960px,100%);aspect-ratio:960/588;filter:drop-shadow(0 14px 40px rgba(0,0,0,.5))}
+  #hud{height:44px;display:flex;align-items:center;gap:16px;padding:0 14px;border-radius:16px 16px 0 0;
+       background:linear-gradient(90deg,#5b21d1,#c2187a 55%,#ff7a1a);font-weight:900;font-size:15px;white-space:nowrap;overflow:hidden}
+  #hud .tag{opacity:.85;font-weight:800;margin-right:3px}
+  #hud .pill{background:rgba(0,0,0,.22);padding:4px 10px;border-radius:999px}
+  #hud .sp{flex:1}
+  #hud .cifra{display:inline-block;min-width:24px;padding:1px 6px;margin-left:3px;border-radius:7px;background:rgba(0,0,0,.3);text-align:center}
+  #hud .cifra.ok{background:var(--yellow);color:var(--ink)}
+  #hud button{padding:3px 9px;font-size:14px;background:rgba(0,0,0,.25);box-shadow:none}
+  canvas{display:block;width:100%;height:auto;border-radius:0 0 16px 16px;background:#160b33}
+  #overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+       background:rgba(15,6,40,.66);backdrop-filter:blur(2px);border-radius:16px;padding:16px}
+  #overlay.hidden{display:none}
+  .card{background:var(--cream);color:var(--ink);border-radius:22px;padding:22px 26px;width:min(780px,100%);
+       max-height:100%;overflow:auto;box-shadow:0 0 0 4px rgba(255,255,255,.15),0 20px 50px rgba(0,0,0,.5);animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+  .card.dark{background:linear-gradient(160deg,#3b1a8f,#24104a 60%,#0e2a55);color:var(--cream)}
+  @keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+  .card h1{font-family:'Lilita One',sans-serif;font-weight:400;font-size:52px;margin:0 0 2px;line-height:1.05;
+       background:linear-gradient(90deg,var(--yellow),var(--orange),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .card h2{font-family:'Lilita One',sans-serif;font-weight:400;font-size:32px;margin:0 0 8px}
+  .card.dark h2{color:var(--yellow)}
+  .card p{margin:6px 0;line-height:1.45}
+  .eyebrow{font-weight:900;font-size:13px;letter-spacing:2px;color:var(--pink);text-transform:uppercase}
+  .card.dark .eyebrow{color:var(--cyan)}
+  .sub{font-size:20px;color:#ffd9a8;font-weight:800;margin-bottom:12px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
+  button{font-family:inherit;font-weight:900;font-size:16px;border:0;border-radius:12px;padding:12px 20px;cursor:pointer;color:#fff;
+       background:linear-gradient(180deg,#a274ff,#6a35e6);box-shadow:0 4px 0 #3d1a99;transition:transform .08s,filter .15s}
+  button:hover{filter:brightness(1.12);transform:translateY(-2px)}
+  button:active{transform:translateY(2px);box-shadow:0 1px 0 #3d1a99}
+  button.go{background:linear-gradient(180deg,#4ff79a,#14b85a);box-shadow:0 4px 0 #0a7a3a;color:#05371a;font-size:18px}
+  button.hot{background:linear-gradient(180deg,#ffb03b,#ff6a00);box-shadow:0 4px 0 #b34500}
+  button.ghost{background:transparent;color:inherit;border:2px solid currentColor;box-shadow:none;opacity:.85}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .opts button{text-align:left;font-size:18px;background:linear-gradient(180deg,#3b2a7a,#24104a);box-shadow:0 4px 0 #120634}
+  .opts button b{display:inline-block;width:28px;height:28px;border-radius:8px;background:var(--yellow);color:var(--ink);text-align:center;margin-right:8px;line-height:28px}
+  .formula{background:linear-gradient(135deg,#fff0c7,#ffe1f0);border-radius:14px;padding:12px;text-align:center;margin:10px 0;border:2px dashed #ff9ccc}
+  .formula b{font-family:Cambria,Georgia,serif;font-size:26px;display:block}
+  .formula small{color:#6b4a7a}
+  .q{font-weight:900;color:#6a35e6;font-size:19px}
+  .msg{border-radius:12px;padding:10px 14px;margin-top:10px;font-weight:800;animation:pop .3s}
+  .msg.bad{background:#ffe0e4;color:#c4123a} .msg.hint{background:#fff1c2;color:#8a5a00}
+  .msg.good{background:#d9fbe6;color:#0c7a3c}
+  .shake{animation:shake .35s}
+  @keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+  .sol{font-family:Cambria,Georgia,serif;font-size:17px;margin:6px 0 0 18px;padding:0}
+  .big{font-family:'Lilita One',sans-serif;font-size:76px;color:var(--yellow);line-height:1;text-shadow:0 4px 0 #b34500}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .keys{background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.12);border-radius:14px;padding:12px}
+  kbd{display:inline-block;background:#fff;color:var(--ink);border-radius:7px;padding:1px 8px;font-weight:900;box-shadow:0 3px 0 #b7a6d9;margin:0 2px}
+  table{border-collapse:collapse;width:100%;margin-top:6px}
+  td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.12)}
+  .card:not(.dark) td{border-color:#ecdcc4}
+  .dot{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px}
+  .letter{background:#fff;color:var(--ink);border-radius:14px;padding:14px 18px;margin:10px 0;transform:rotate(-.6deg)}
+  input.code{font-family:'Lilita One',sans-serif;font-size:44px;width:170px;text-align:center;border-radius:14px;
+       border:4px solid var(--yellow);padding:4px;background:#fff;color:var(--ink)}
+  .manual{background:#efe6ff;border-radius:12px;padding:10px 14px;margin-top:10px;font-size:15px}
+  .manual li{margin:3px 0}
+  .stars{font-size:54px;letter-spacing:6px;margin:4px 0}
+  .stars span{display:inline-block;color:#4a3a7a;transform:scale(.4);opacity:0;animation:star .5s forwards}
+  .stars span.on{color:var(--yellow);text-shadow:0 0 18px rgba(255,210,63,.8)}
+  @keyframes star{60%{transform:scale(1.35)}to{transform:scale(1);opacity:1}}
+  .obj{font-size:14px;opacity:.9} .obj li{margin:2px 0}
+  .record{display:inline-block;background:var(--yellow);color:var(--ink);font-weight:900;border-radius:999px;padding:4px 12px;font-size:14px}
+  #foot{margin-top:10px;font-size:12px;color:#b7a6d9;text-align:center}
+  @media (max-width:640px){ .opts,.grid2{grid-template-columns:1fr} .card h1{font-size:34px} #hud{font-size:12px;gap:8px} }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <span class="pill"><span class="tag">Sala</span><span id="hSala">–</span></span>
+    <span class="pill"><span class="tag">⭐</span><span id="hPts">0</span></span>
+    <span class="pill"><span class="tag">💎</span><span id="hGem">0/10</span></span>
+    <span class="sp"></span>
+    <span><span class="tag">Cifras</span><span id="hCif"></span></span>
+    <span class="pill"><span class="tag">⏱</span><span id="hTime">00:00</span></span>
+    <button id="mute" title="Sonido (M)">🔊</button>
+  </div>
+  <canvas id="c" width="960" height="544"></canvas>
+  <div id="overlay" class="hidden"><div id="card" class="card"></div></div>
+</div>
+<div id="foot">Grano: <kbd>←</kbd><kbd>→</kbd> + <kbd>↑</kbd> saltar · Hoja: <kbd>A</kbd><kbd>D</kbd> + <kbd>W</kbd> saltar · <kbd>R</kbd> reiniciar posiciones · <kbd>M</kbd> sonido · Cálculo Diferencial · CUN</div>
+
+<script>
+// =================== CONTENIDO MATEMÁTICO ===================
+const SALAS = [
+  { name:'Producción', context:'La tostadora gasta demasiado. El costo diario de tostar café depende de cuántos kilos se tuestan.',
+    formula:'C(x) = x² − 12x + 60', vars:'x: cientos de kilos tostados · C: millones de pesos',
+    question:'¿Cuántos kilos deben tostarse para que el costo sea mínimo?',
+    options:['300 kg','600 kg','1.200 kg','6.000 kg'], correct:1,
+    hint:'Deriva C(x) con la regla de la potencia e iguala la derivada a cero.',
+    wrong:'Ese nivel de producción dispara los costos. Revisen la derivada.',
+    sol:['C′(x) = 2x − 12 = 0 → x = 6','C″(x) = 2 > 0 → es un mínimo','C(6) = 36 − 72 + 60 = 24'],
+    decision:'Tostar 600 kg diarios deja el costo en el mínimo: $24 millones.', short:'600 kg diarios', cifra:6 },
+  { name:'Ventas', context:'Si subimos mucho el precio nadie compra; si lo bajamos mucho, no ganamos. La demanda es q = 100 − 2p (cientos de bolsas).',
+    formula:'I(p) = p · (100 − 2p)', vars:'p: precio por bolsa en miles de pesos · I: ingreso',
+    question:'¿Qué precio por bolsa maximiza el ingreso?',
+    options:['$12.500','$25.000','$50.000','$100.000'], correct:1,
+    hint:'Usa la regla del producto: (f·g)′ = f′·g + f·g′, con f = p y g = 100 − 2p.',
+    wrong:'Con ese precio el ingreso cae. Apliquen la regla del producto con cuidado.',
+    sol:['I′(p) = 1·(100 − 2p) + p·(−2) = 100 − 4p','100 − 4p = 0 → p = 25','I″(p) = −4 < 0 → es un máximo'],
+    decision:'Vender a $25.000 la bolsa: 5.000 bolsas y un ingreso máximo de $125 millones.', short:'$25.000 por bolsa', cifra:25 },
+  { name:'Energía', context:'Instalamos paneles solares para bajar la factura de energía. Su potencia cambia durante el día.',
+    formula:'E(t) = −t² + 12t − 20', vars:'t: horas desde las 6:00 a.m. · E: potencia en kW',
+    question:'¿A qué hora debemos encender la tostadora para aprovechar la máxima potencia?',
+    options:['6:00 a.m.','10:00 a.m.','12:00 m.','6:00 p.m.'], correct:2,
+    hint:'Encuentra el punto crítico de E(t) y súmale esas horas a las 6:00 a.m.',
+    wrong:'A esa hora los paneles no rinden al máximo. ¿Sumaron las horas a las 6:00 a.m.?',
+    sol:['E′(t) = −2t + 12 = 0 → t = 6','E″(t) = −2 < 0 → es un máximo','6:00 a.m. + 6 h = 12:00 m. · E(6) = 16 kW'],
+    decision:'Programar el tostado al mediodía, con 16 kW de energía solar.', short:'tostar a las 12:00 m.', cifra:6 },
+  { name:'Logística', context:'De una lámina cuadrada de cartón de 30 cm se corta un cuadrado de x cm en cada esquina y se doblan los bordes: queda una caja sin tapa.',
+    formula:'V(x) = x(30 − 2x)² = 4x³ − 120x² + 900x', vars:'x: corte en cm (0 < x < 15) · V: volumen en cm³',
+    question:'¿Qué medida de corte da el mayor volumen?',
+    options:['5 cm','7,5 cm','10 cm','15 cm'], correct:0,
+    hint:'Deriva la forma desarrollada, saca factor común 12 y factoriza. Recuerda que x debe estar entre 0 y 15.',
+    wrong:'Esa caja no aprovecha el cartón. Ojo: no todo punto crítico sirve en la vida real.',
+    sol:['V′(x) = 12x² − 240x + 900 = 12(x − 5)(x − 15)','x = 5 o x = 15 (con 15 no hay base: se descarta)','V″(5) = 24(5) − 240 = −120 < 0 → máximo'],
+    decision:'Cortar 5 cm por esquina: cajas de 20 × 20 × 5 cm con 2.000 cm³.', short:'cortes de 5 cm', cifra:5 },
+  { name:'Finanzas', context:'El cliente de exportación paga un precio fijo, así que debemos producir con el menor costo promedio por bolsa.',
+    formula:'C̄(x) = x + 100/x', vars:'x: cientos de bolsas · C̄: miles de pesos por bolsa',
+    question:'¿Qué tamaño de lote minimiza el costo promedio?',
+    options:['100 bolsas','500 bolsas','1.000 bolsas','10.000 bolsas'], correct:2,
+    hint:'Escribe 100/x como 100x⁻¹ y aplica la regla de la potencia.',
+    wrong:'Con ese lote el costo por bolsa sube. Revisen el exponente negativo.',
+    sol:['C̄′(x) = 1 − 100/x² = 0 → x² = 100 → x = 10','C̄″(x) = 200/x³; C̄″(10) = 0,2 > 0 → mínimo','C̄(10) = 10 + 10 = 20'],
+    decision:'Producir lotes de 1.000 bolsas a un costo promedio mínimo de $20.000 por bolsa.', short:'lotes de 1.000 bolsas', cifra:10 },
+];
+const CODIGO = SALAS.reduce((a,s)=>a+s.cifra,0); // 52
+
+// =================== MAPAS ===================
+// # bloque · R café hirviendo (solo Grano) · W agua (solo Hoja) · X ácido (nadie)
+// r gema de Grano · w gema de Hoja · T terminal · L compuerta · A puerta Grano · B puerta Hoja · 1/2 inicio
+const E = '#............................#';
+const MAP1 = ['##############################',E,E,E,E,E,E,E,E,E,E,
+  '#.....................L......#',
+  '#.....................L......#',
+  '#...........r......w..L......#',
+  '#.12....T.............L.A..B.#',
+  '###########RRR####WWW#########',
+  '##############################'];
+const MAP2 = ['##############################',E,E,E,
+  '#...........L................#',
+  '#...........L................#',
+  '#...........L......A..B......#',
+  '#...........##################',
+  '#.....T......................#',
+  '#....####....................#',E,E,
+  '#.........####...............#',
+  '#.....r.......w..............#',
+  '#.12.........................#',
+  '#####RRR####WWW######XXX######',
+  '##############################'];
+const MAP3 = ['##############################',E,E,E,E,
+  '#.....T................L.....#',
+  '#...#####..............L.....#',
+  '#...........w..........L.....#',
+  '#..............r.......L.A.B.#',
+  '#.........####......##########',E,E,
+  '#.....####......###..........#',E,
+  '#.12.........................#',
+  '##########RRRRWWWW############',
+  '##############################'];
+const swap = {R:'W',W:'R',r:'w',w:'r',1:'2',2:'1'};
+const mirror = m => m.map(row => row.split('').reverse().map(ch => swap[ch]||ch).join(''));
+const MAPS = [MAP1, MAP2, MAP3, mirror(MAP2), mirror(MAP3)];
+
+// =================== SONIDO (WebAudio, sin archivos) ===================
+let AC=null, muted=false, musicTimer=null, beat=0;
+function audio(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended') AC.resume(); }
+function tone(freq,dur,type='square',vol=.12,slide=0,delay=0){
+  if(!AC||muted) return;
+  const t=AC.currentTime+delay, o=AC.createOscillator(), g=AC.createGain();
+  o.type=type; o.frequency.setValueAtTime(freq,t); if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(40,freq+slide),t+dur);
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(AC.destination); o.start(t); o.stop(t+dur+.02);
+}
+const SFX = {
+  jump:()=>tone(420,.14,'square',.07,380),
+  land:()=>tone(140,.06,'triangle',.08,-60),
+  gem:()=>{ tone(988,.08,'square',.08); tone(1319,.14,'square',.08,0,.07); },
+  die:()=>{ tone(300,.35,'sawtooth',.1,-240); },
+  right:()=>[523,659,784,1047].forEach((f,i)=>tone(f,.16,'square',.09,0,i*.09)),
+  wrong:()=>{ tone(220,.18,'sawtooth',.09); tone(180,.25,'sawtooth',.09,0,.15); },
+  gate:()=>{ tone(200,.5,'triangle',.12,600); },
+  door:()=>tone(660,.08,'triangle',.08),
+  win:()=>[523,659,784,659,784,1047].forEach((f,i)=>tone(f,.2,'square',.09,0,i*.12)),
+  click:()=>tone(700,.05,'triangle',.06),
+};
+const MELODY=[262,330,392,330,294,349,440,349,262,330,392,523,494,392,330,294];
+function music(on){
+  clearInterval(musicTimer); musicTimer=null;
+  if(!on) return;
+  musicTimer=setInterval(()=>{ if(muted||!AC) return;
+    const f=MELODY[beat%MELODY.length]; tone(f,.18,'triangle',.035); if(beat%2===0) tone(f/2,.25,'sine',.05);
+    if(beat%4===0) tone(70,.12,'sine',.12,-30); beat++; }, 210);
+}
+function toggleMute(){ muted=!muted; $('mute').textContent=muted?'🔇':'🔊'; }
+
+// =================== MOTOR ===================
+const T=32, COLS=30, ROWS=17, G=0.6, JUMP=12, SPEED=3.8, MAXFALL=12, COYOTE=6, BUFFER=7;
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+const keys={};
+addEventListener('keydown',e=>{
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code) && state==='play') e.preventDefault();
+  if(!keys[e.code]){ for(const p of (L?L.players:[])) if(e.code===p.k.j) p.buf=BUFFER; }
+  keys[e.code]=true;
+  if(e.code==='KeyR' && state==='play') resetPositions();
+  if(e.code==='KeyM') toggleMute();
+});
+addEventListener('keyup',e=>{keys[e.code]=false;});
+$('mute').onclick=()=>{ audio(); toggleMute(); };
+
+const POOL = { R:{a:'#ffe14d',b:'#ff6a00',glow:'#ff8a00'}, W:{a:'#8ff3ff',b:'#0a8cff',glow:'#1ed6ff'}, X:{a:'#c6ff4d',b:'#2fbf2f',glow:'#7dff3a'} };
+const PLAYERS = [
+  { name:'Grano', immune:'R', gem:'r', door:'A', color:'#ff5a36', dark:'#b8261a', accent:'#ffb000', k:{l:'ArrowLeft',r:'ArrowRight',j:'ArrowUp'} },
+  { name:'Hoja',  immune:'W', gem:'w', door:'B', color:'#26d07c', dark:'#11885a', accent:'#1ed6ff', k:{l:'KeyA',r:'KeyD',j:'KeyW'} },
+];
+
+let state='menu', L=null, lvl=0, score=0, gemsTotal=0, cifras=[], deaths=0, wrongs=0, hints=0, starsAll=[];
+let startTime=0, elapsed=0, cajaTries=0, particles=[], texts=[], tick=0, flash=0, shake=0, winTimer=0;
+let best=0; try{ best=+localStorage.getItem('gpud_best')||0; }catch(e){}
+
+function loadLevel(i){
+  lvl=i;
+  const grid = MAPS[i].map(r=>r.split(''));
+  const lv = { grid, gateOpen:false, gateAnim:0, gems:[], doors:{}, terminal:null, spawns:{}, cool:false,
+               hintUsed:false, wrongLocal:0, gemsLocal:0, deathsLocal:0 };
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const ch=grid[r][c];
+    if(ch==='r'||ch==='w'){ lv.gems.push({c,r,type:ch,taken:false}); grid[r][c]='.'; }
+    else if(ch==='1'||ch==='2'){ lv.spawns[ch]={c,r}; grid[r][c]='.'; }
+    else if(ch==='A'||ch==='B'){ lv.doors[ch]={c,r,open:0}; grid[r][c]='.'; }
+    else if(ch==='T'){ lv.terminal={c,r}; grid[r][c]='.'; }
+  }
+  lv.players = PLAYERS.map((p,idx)=>{ const s=lv.spawns[idx?'2':'1'];
+    return {...p, sx:s.c*T+5, sy:(s.r+1)*T-30, x:s.c*T+5, y:(s.r+1)*T-30, w:22, h:30, vx:0, vy:0,
+            ground:false, coyote:0, buf:0, face:1, atDoor:false, scx:1, scy:1, blink:0, wasAt:false}; });
+  L=lv; winTimer=0; updateHud();
+}
+function resetPositions(){ L.players.forEach(p=>{p.x=p.sx;p.y=p.sy;p.vx=0;p.vy=0;}); }
+const tileAt=(c,r)=> (c<0||r<0||c>=COLS||r>=ROWS) ? '#' : L.grid[r][c];
+const isSolid=(c,r)=>{ const ch=tileAt(c,r); return ch==='#'||ch==='R'||ch==='W'||ch==='X'||(ch==='L'&&!L.gateOpen); };
+
+function moveX(p){
+  p.x+=p.vx;
+  const top=Math.floor(p.y/T), bot=Math.floor((p.y+p.h-1)/T);
+  if(p.vx>0){ const c=Math.floor((p.x+p.w-1)/T); for(let r=top;r<=bot;r++) if(isSolid(c,r)){ p.x=c*T-p.w; break; } }
+  else if(p.vx<0){ const c=Math.floor(p.x/T); for(let r=top;r<=bot;r++) if(isSolid(c,r)){ p.x=(c+1)*T; break; } }
+}
+function moveY(p){
+  const wasGround=p.ground, vy=p.vy;
+  p.y+=p.vy; p.ground=false;
+  const left=Math.floor(p.x/T), right=Math.floor((p.x+p.w-1)/T);
+  if(p.vy>0){ const r=Math.floor((p.y+p.h-1)/T); for(let c=left;c<=right;c++) if(isSolid(c,r)){ p.y=r*T-p.h; p.vy=0; p.ground=true; break; } }
+  else if(p.vy<0){ const r=Math.floor(p.y/T); for(let c=left;c<=right;c++) if(isSolid(c,r)){ p.y=(r+1)*T; p.vy=0; break; } }
+  if(p.ground && !wasGround && vy>3){ // aterrizaje: aplastar + polvo
+    p.scx=1.35; p.scy=.7; SFX.land();
+    for(let i=0;i<8;i++) particles.push({x:p.x+p.w/2,y:p.y+p.h,vx:(Math.random()-.5)*3,vy:-Math.random()*1.5,life:22,max:22,color:'rgba(255,240,220,.8)',r:3,g:.05});
+  }
+}
+function burst(x,y,color,n=20,spd=5){ for(let i=0;i<n;i++){ const a=Math.random()*7, s=Math.random()*spd;
+  particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-1,life:40,max:40,color,r:3+Math.random()*3,g:.12}); } }
+function floatText(x,y,text,color){ texts.push({x,y,text,color,life:60}); }
+function die(p){
+  burst(p.x+p.w/2,p.y+p.h/2,p.color,30,6); SFX.die();
+  score=Math.max(0,score-50); deaths++; L.deathsLocal++; flash=14; shake=14;
+  floatText(p.x+p.w/2,p.y-6,'−50','#ff4d5e');
+  p.x=p.sx; p.y=p.sy; p.vx=0; p.vy=0; updateHud();
+}
+const overlaps=(p,x,y,w,h)=> p.x<x+w && p.x+p.w>x && p.y<y+h && p.y+p.h>y;
+
+function update(){
+  tick++;
+  particles=particles.filter(q=>{ q.x+=q.vx; q.y+=q.vy; q.vy+=q.g??.12; return --q.life>0; });
+  texts=texts.filter(t=>{ t.y-=.8; return --t.life>0; });
+  if(L){ if(L.gateOpen && L.gateAnim<1) L.gateAnim=Math.min(1,L.gateAnim+.04);
+         for(const k in L.doors) L.doors[k].open += ((L.players[k==='A'?0:1].atDoor?1:0)-L.doors[k].open)*.15; }
+  if(state!=='play') return;
+  elapsed = Date.now()-startTime;
+  for(const p of L.players){
+    const dir=(keys[p.k.l]?-1:0)+(keys[p.k.r]?1:0);
+    p.vx += (dir*SPEED - p.vx)*.35; if(Math.abs(p.vx)<.05) p.vx=0;
+    if(dir) p.face=dir;
+    p.coyote = p.ground ? COYOTE : p.coyote-1;
+    if(p.buf>0) p.buf--;
+    if(p.buf>0 && p.coyote>0){ p.vy=-JUMP; p.ground=false; p.coyote=0; p.buf=0; p.scx=.75; p.scy=1.3; SFX.jump(); }
+    if(!keys[p.k.j] && p.vy<-4) p.vy=-4; // salto variable
+    p.vy=Math.min(p.vy+G,MAXFALL);
+    moveX(p); moveY(p);
+    p.scx+=(1-p.scx)*.18; p.scy+=(1-p.scy)*.18;
+    if(--p.blink<-180) p.blink=8;
+    if(p.ground && Math.abs(p.vx)>2 && tick%7===0)
+      particles.push({x:p.x+p.w/2-p.face*8,y:p.y+p.h,vx:-p.face*.6,vy:-.5,life:16,max:16,color:'rgba(255,240,220,.55)',r:3,g:0});
+    if(p.ground){
+      const r=Math.floor((p.y+p.h+1)/T);
+      for(const c of [Math.floor((p.x+3)/T), Math.floor((p.x+p.w-3)/T)]){
+        const ch=tileAt(c,r);
+        if((ch==='R'||ch==='W'||ch==='X') && ch!==p.immune){ die(p); break; }
+      }
+    }
+    for(const g of L.gems) if(!g.taken && g.type===p.gem){
+      const gx=g.c*T+16, gy=g.r*T+16;
+      if(Math.abs(p.x+p.w/2-gx)<20 && Math.abs(p.y+p.h/2-gy)<22){
+        g.taken=true; score+=10; gemsTotal++; L.gemsLocal++; updateHud(); SFX.gem();
+        burst(gx,gy,p.accent,18,4); floatText(gx,gy-10,'+10',p.accent);
+      }
+    }
+    const d=L.doors[p.door]; p.atDoor = L.gateOpen && overlaps(p, d.c*T+4, (d.r-1)*T, T-8, 2*T);
+    if(p.atDoor && !p.wasAt) SFX.door(); p.wasAt=p.atDoor;
+  }
+  const t=L.terminal, onT = L.players.some(p=>overlaps(p,t.c*T-4,t.r*T-8,T+8,T+8));
+  if(!L.gateOpen){ if(onT && !L.cool) openTerminal(); if(!onT) L.cool=false; }
+  if(L.gateOpen && L.players.every(p=>p.atDoor)){
+    if(++winTimer===1){ SFX.win(); for(let i=0;i<70;i++) confetti(); }
+    if(winTimer>55) levelDone();
+  } else winTimer=0;
+}
+const CONF=['#ffd23f','#ff4fa3','#1ed6ff','#2ee87a','#ff7a1a','#a274ff'];
+function confetti(){ particles.push({x:Math.random()*960,y:-10,vx:(Math.random()-.5)*2,vy:Math.random()*2+1,life:120,max:120,
+  color:CONF[Math.floor(Math.random()*CONF.length)],r:6,g:.04,rect:true,rot:Math.random()*6}); }
+
+// =================== DIBUJO ===================
+const BUBBLES=[...Array(26)].map(()=>({x:Math.random()*960,y:Math.random()*544,r:6+Math.random()*26,s:.15+Math.random()*.4,
+  c:['#ff4fa3','#1ed6ff','#ffd23f','#a274ff'][Math.floor(Math.random()*4)]}));
+const STARS=[...Array(70)].map(()=>({x:Math.random()*960,y:Math.random()*544,r:Math.random()*1.6+.3,p:Math.random()*7}));
+function drawBg(){
+  const g=ctx.createLinearGradient(0,0,0,544); g.addColorStop(0,'#2a1170'); g.addColorStop(.55,'#3b1a8f'); g.addColorStop(1,'#0c3a6b');
+  ctx.fillStyle=g; ctx.fillRect(0,0,960,544);
+  for(const s of STARS){ ctx.globalAlpha=.4+.4*Math.sin(tick/30+s.p); ctx.fillStyle='#fff'; ctx.fillRect(s.x,s.y,s.r,s.r); }
+  for(const b of BUBBLES){ b.y-=b.s; if(b.y<-40){ b.y=584; b.x=Math.random()*960; }
+    ctx.globalAlpha=.10; ctx.fillStyle=b.c; ctx.beginPath(); ctx.arc(b.x+Math.sin(tick/50+b.r)*10,b.y,b.r,0,7); ctx.fill(); }
+  ctx.globalAlpha=1;
+}
+function drawTile(c,r,ch){
+  const x=c*T,y=r*T;
+  if(ch==='#'){
+    const g=ctx.createLinearGradient(0,y,0,y+T); g.addColorStop(0,'#f6a93b'); g.addColorStop(1,'#d9771c');
+    ctx.fillStyle=g; ctx.fillRect(x,y,T,T);
+    ctx.fillStyle='rgba(120,50,10,.35)'; // ladrillo
+    if(r%2){ ctx.fillRect(x+T/2-1,y,2,T); } else { ctx.fillRect(x,y,2,T); }
+    ctx.fillRect(x,y+T-3,T,3);
+    const open=!isSolid(c,r-1)||(tileAt(c,r-1)==='L');
+    if(open){ // crema encima
+      ctx.fillStyle='#fff3d6'; ctx.fillRect(x,y,T,6);
+      ctx.beginPath(); for(let i=0;i<4;i++) ctx.arc(x+4+i*8,y+6,4,0,Math.PI); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.7)'; ctx.fillRect(x+3,y+1,6,2);
+    }
+  } else if(POOL[ch]){
+    const P=POOL[ch];
+    ctx.fillStyle='#d9771c'; ctx.fillRect(x,y,T,T);
+    ctx.save(); ctx.shadowColor=P.glow; ctx.shadowBlur=18;
+    ctx.fillStyle=P.b; ctx.fillRect(x,y+7,T,T-7); ctx.restore();
+    ctx.fillStyle=P.a; ctx.beginPath(); ctx.moveTo(x,y+14);
+    for(let i=0;i<=T;i+=4) ctx.lineTo(x+i, y+6+Math.sin((x+i)/8+tick/8)*3);
+    ctx.lineTo(x+T,y+14); ctx.fill();
+    if(tick%14===(c*3)%14) particles.push({x:x+Math.random()*T,y:y+6,vx:0,vy:-.7-Math.random(),life:28,max:28,color:P.a,r:3,g:0});
+  }
+}
+function drawGate(){
+  const cells=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(L.grid[r][c]==='L') cells.push([c,r]);
+  if(!cells.length || L.gateAnim>=1) return;
+  const lift=L.gateAnim*cells.length*T, x0=cells[0][0]*T, y0=cells[0][1]*T, h=cells.length*T;
+  ctx.save(); ctx.beginPath(); ctx.rect(x0-6,y0-4,T+12,h+4); ctx.clip();
+  ctx.translate(0,-lift);
+  ctx.shadowColor='#ff4fa3'; ctx.shadowBlur=16;
+  ctx.fillStyle='rgba(255,79,163,.18)'; ctx.fillRect(x0,y0,T,h);
+  ctx.fillStyle='#ff4fa3'; for(let i=3;i<T;i+=9) ctx.fillRect(x0+i,y0,4,h);
+  ctx.fillStyle='#ffd23f'; for(let k=1;k<cells.length;k+=2) ctx.fillRect(x0,y0+k*T+T/2-2,T,4);
+  ctx.shadowBlur=0;
+  const mx=x0+T/2, my=y0+h/2;
+  ctx.fillStyle='#24104a'; ctx.beginPath(); ctx.arc(mx,my,13,0,7); ctx.fill();
+  ctx.fillStyle='#ffd23f'; ctx.fillRect(mx-6,my-2,12,9); ctx.strokeStyle='#ffd23f'; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.arc(mx,my-3,4.5,Math.PI,0); ctx.stroke();
+  ctx.restore();
+}
+function drawGem(g){
+  if(g.taken) return;
+  const x=g.c*T+16, y=g.r*T+16+Math.sin(tick/10+g.c)*4, col=g.type==='r'?'#ffb000':'#1ed6ff', s=1+Math.sin(tick/8+g.c)*.08;
+  ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+  ctx.globalAlpha=.35; ctx.fillStyle=col; ctx.beginPath(); ctx.arc(0,0,17,0,7); ctx.fill(); ctx.globalAlpha=1;
+  ctx.shadowColor=col; ctx.shadowBlur=18; ctx.fillStyle=col;
+  ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(11,-3); ctx.lineTo(0,13); ctx.lineTo(-11,-3); ctx.closePath(); ctx.fill();
+  ctx.shadowBlur=0; ctx.fillStyle='rgba(255,255,255,.75)'; ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(5,-3); ctx.lineTo(0,2); ctx.lineTo(-5,-3); ctx.fill();
+  if(Math.sin(tick/7+g.c)>.9){ ctx.fillStyle='#fff'; ctx.fillRect(7,-14,3,3); }
+  ctx.restore();
+}
+function drawTerminal(){
+  const t=L.terminal, x=t.c*T, y=t.r*T, ok=L.gateOpen, col=ok?'#2ee87a':'#ffd23f';
+  ctx.fillStyle='#24104a'; ctx.fillRect(x+12,y+16,8,16);
+  ctx.save(); ctx.shadowColor=col; ctx.shadowBlur=ok?8:14+Math.sin(tick/6)*8;
+  ctx.fillStyle='#24104a'; ctx.beginPath(); ctx.roundRect(x-6,y-10,T+12,30,6); ctx.fill();
+  ctx.fillStyle=ok?'#0f5a31':'#3b1a8f'; ctx.beginPath(); ctx.roundRect(x-3,y-7,T+6,24,4); ctx.fill(); ctx.restore();
+  ctx.fillStyle=col; ctx.font='bold 14px Cambria,serif'; ctx.textAlign='center';
+  ctx.fillText(ok?'✓':"f′(x)", x+T/2, y+10);
+  if(!ok){ const by=y-26+Math.sin(tick/8)*4;
+    ctx.fillStyle='#ff4fa3'; ctx.beginPath(); ctx.roundRect(x-8,by-12,T+16,18,9); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='900 11px Nunito,sans-serif'; ctx.fillText('¡RETO!', x+T/2, by+1); }
+}
+function drawDoor(key){
+  const d=L.doors[key], p=L.players[key==='A'?0:1], x=d.c*T, y=(d.r-1)*T;
+  ctx.save();
+  if(L.gateOpen){ ctx.shadowColor=p.accent; ctx.shadowBlur=14+Math.sin(tick/7)*6; }
+  ctx.fillStyle='#24104a'; ctx.beginPath(); ctx.roundRect(x,y-4,T,2*T+4,[14,14,0,0]); ctx.fill(); ctx.restore();
+  ctx.fillStyle=p.color; ctx.beginPath(); ctx.roundRect(x+4,y,T-8,2*T,[11,11,0,0]); ctx.fill();
+  // hoja de la puerta que se abre
+  const ow=(T-8)*(1-d.open*.85);
+  ctx.fillStyle=p.dark; ctx.beginPath(); ctx.roundRect(x+4,y,ow,2*T,[11,11,0,0]); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.font='900 17px Nunito,sans-serif'; ctx.textAlign='center';
+  ctx.fillText(key==='A'?'G':'H', x+T/2, y+28);
+  if(d.open>.5){ ctx.fillStyle='rgba(255,255,255,.8)'; ctx.fillText('✓', x+T/2, y+50); }
+}
+function drawPlayer(p){
+  const cx=p.x+p.w/2, by=p.y+p.h, run=p.ground&&Math.abs(p.vx)>1, bob=run?Math.abs(Math.sin(tick/4))*2.5:0;
+  ctx.save(); ctx.translate(cx,by);
+  ctx.fillStyle='rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(0,1,12*p.scx,3,0,0,7); ctx.fill();
+  ctx.translate(0,-bob); ctx.scale(p.scx,p.scy);
+  ctx.rotate(run?Math.sin(tick/4)*.06:(p.ground?0:p.vx*.02));
+  // aura
+  ctx.save(); ctx.shadowColor=p.color; ctx.shadowBlur=14;
+  ctx.fillStyle=p.color; ctx.beginPath(); ctx.ellipse(0,-15,13,15.5,0,0,7); ctx.fill(); ctx.restore();
+  ctx.fillStyle='rgba(255,255,255,.25)'; ctx.beginPath(); ctx.ellipse(-5,-22,4,6,-.4,0,7); ctx.fill();
+  if(p.name==='Grano'){
+    ctx.strokeStyle=p.dark; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(1,-30); ctx.bezierCurveTo(-5,-20,6,-10,1,-1); ctx.stroke();
+    ctx.fillStyle='#ffd23f'; for(let i=-1;i<=1;i++){ ctx.beginPath(); ctx.ellipse(i*5,-32-Math.abs(i)*-1+Math.sin(tick/5+i)*1.5,2.5,5,0,0,7); ctx.fill(); } // vapor-flama
+  } else {
+    ctx.fillStyle='#7dff9e'; ctx.beginPath(); ctx.ellipse(6,-32,9,4.5,-0.6+Math.sin(tick/9)*.15,0,7); ctx.fill();
+    ctx.strokeStyle=p.dark; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(-1,-28); ctx.lineTo(12,-36); ctx.stroke();
+    ctx.fillStyle='#1ed6ff'; ctx.beginPath(); ctx.arc(-6,-30,2.5,0,7); ctx.fill();
+  }
+  // cara
+  const ex=p.face*3, closed=p.blink>0;
+  ctx.fillStyle='#fff';
+  if(closed){ ctx.fillRect(ex-8,-19,7,2); ctx.fillRect(ex+2,-19,7,2); }
+  else { ctx.beginPath(); ctx.arc(ex-4,-18,4.5,0,7); ctx.arc(ex+5,-18,4.5,0,7); ctx.fill();
+    ctx.fillStyle='#1d0b3a'; ctx.beginPath(); ctx.arc(ex-3+p.face*1.2,-17.5,2.3,0,7); ctx.arc(ex+6+p.face*1.2,-17.5,2.3,0,7); ctx.fill(); }
+  ctx.strokeStyle='#1d0b3a'; ctx.lineWidth=2; ctx.beginPath();
+  if(p.ground) ctx.arc(ex+.5,-11,4,.15*Math.PI,.85*Math.PI); else { ctx.arc(ex+.5,-9,2.5,0,7); }
+  ctx.stroke();
+  ctx.fillStyle='rgba(255,120,160,.55)'; ctx.beginPath(); ctx.arc(ex-9,-12,2.5,0,7); ctx.arc(ex+10,-12,2.5,0,7); ctx.fill();
+  ctx.restore();
+}
+function draw(){
+  ctx.save();
+  if(shake>0){ ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake); shake*=.85; if(shake<.5) shake=0; }
+  drawBg();
+  if(L){
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const ch=L.grid[r][c]; if(ch!=='.'&&ch!=='L') drawTile(c,r,ch); }
+    drawGate(); drawDoor('A'); drawDoor('B'); drawTerminal(); L.gems.forEach(drawGem); L.players.forEach(drawPlayer);
+  }
+  for(const q of particles){ ctx.globalAlpha=Math.max(0,q.life/(q.max||40)); ctx.fillStyle=q.color;
+    if(q.rect){ ctx.save(); ctx.translate(q.x,q.y); ctx.rotate(q.rot+=.1); ctx.fillRect(-q.r/2,-q.r/4,q.r,q.r/2); ctx.restore(); }
+    else { ctx.beginPath(); ctx.arc(q.x,q.y,q.r||3,0,7); ctx.fill(); } }
+  ctx.globalAlpha=1;
+  for(const t of texts){ ctx.globalAlpha=Math.min(1,t.life/20); ctx.font='900 22px Lilita One,Nunito,sans-serif'; ctx.textAlign='center';
+    ctx.lineWidth=5; ctx.strokeStyle='#24104a'; ctx.strokeText(t.text,t.x,t.y); ctx.fillStyle=t.color; ctx.fillText(t.text,t.x,t.y); }
+  ctx.globalAlpha=1;
+  if(L){
+    ctx.font='900 15px Nunito,sans-serif'; ctx.textAlign='left'; ctx.lineWidth=4; ctx.strokeStyle='rgba(20,6,50,.8)';
+    const msg = !L.gateOpen ? '🎯 Lleven a uno de los dos a la terminal ¡RETO! para abrir la compuerta'
+               : '🚪 ¡Compuerta abierta! Grano a la puerta G y Hoja a la puerta H';
+    ctx.strokeText(msg,44,60); ctx.fillStyle='#fff'; ctx.fillText(msg,44,60);
+  }
+  ctx.restore();
+  if(flash>0){ ctx.fillStyle=`rgba(255,77,94,${flash/34})`; ctx.fillRect(0,0,960,544); flash--; }
+}
+function loop(){ update(); draw(); if(state==='play'||state==='modal') updateTime(); requestAnimationFrame(loop); }
+
+// =================== INTERFAZ ===================
+const ov=$('overlay'), card=$('card');
+function show(html,dark){ card.className='card'+(dark?' dark':''); card.innerHTML=html; ov.classList.remove('hidden'); card.scrollTop=0;
+  card.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>SFX.click())); }
+function hide(){ ov.classList.add('hidden'); }
+function updateHud(){
+  $('hSala').textContent = L ? `${lvl+1}/5 · ${SALAS[lvl].name}` : '–';
+  $('hPts').textContent = score; $('hGem').textContent = `${gemsTotal}/10`;
+  $('hCif').innerHTML = SALAS.map((s,i)=>`<span class="cifra ${cifras[i]!==undefined?'ok':''}">${cifras[i]!==undefined?cifras[i]:'?'}</span>`).join('');
+}
+function updateTime(){ const s=Math.floor(elapsed/1000); $('hTime').textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+
+const MANUAL = `<div class="manual"><b>📘 Manual del gerente</b><ul>
+  <li>Potencia: d/dx [xⁿ] = n·xⁿ⁻¹ · Constante: d/dx [c] = 0</li>
+  <li>Producto: (f·g)′ = f′·g + f·g′</li>
+  <li>Punto crítico: f′(x) = 0 o no existe</li>
+  <li>2.ª derivada: f″ &gt; 0 → mínimo · f″ &lt; 0 → máximo</li>
+  <li>Receta: derivar → igualar a 0 → confirmar con f″ → decidir</li></ul></div>`;
+
+function menu(){
+  state='menu'; L=null; updateHud(); music(false);
+  show(`<div class="eyebrow">Cálculo Diferencial · Aventura cooperativa</div>
+    <h1>Gerente por un día</h1><div class="sub">☕ Grano y 🌿 Hoja al rescate de Café Andino S.A.S.</div>
+    <p>Dos héroes, cinco departamentos y una empresa al borde de la quiebra. Crucen cada sala juntos, resuelvan el reto de derivadas, consigan las tres estrellas y abran la caja fuerte.</p>
+    ${best?`<p><span class="record">🏆 Récord: ${best} puntos</span></p>`:''}
+    <div class="row"><button class="go" onclick="startGame()">▶ Jugar</button>
+    <button class="hot" onclick="historia()">Historia</button><button class="ghost" onclick="comoJugar()">Cómo jugar</button></div>`, true);
+}
+function historia(){
+  audio();
+  show(`<h2>📜 Una carta urgente</h2>
+    <div class="letter"><p><b>Grano y Hoja:</b></p>
+    <p>Café Andino lleva 40 años llevando el mejor café del Huila a toda Colombia. Este año gastamos más de lo que vendemos, la energía se disparó y un contrato de exportación está a punto de perderse. La junta se reúne hoy a las 6:00 p.m.</p>
+    <p>Recorran los cinco departamentos. En cada uno hay una terminal con un problema que solo se resuelve con derivadas. Cada decisión correcta abre la compuerta y les entrega una <b>cifra clave</b>. Con las cinco cifras abrirán la caja fuerte donde está el contrato.</p>
+    <p><b>El futuro de 120 familias depende de ustedes.</b></p><p><i>— Don Aurelio Rojas, presidente</i></p></div>
+    <div class="row"><button class="go" onclick="comoJugar()">¡Aceptamos el reto!</button><button class="ghost" onclick="menu()">Volver</button></div>`, true);
+}
+function comoJugar(){
+  audio();
+  show(`<h2>🎮 Cómo jugar</h2>
+    <div class="grid2">
+      <div class="keys"><b style="color:#ff7a5a">☕ Grano</b><br>Moverse <kbd>←</kbd><kbd>→</kbd> · Saltar <kbd>↑</kbd><br>
+        <span class="dot" style="background:#ff6a00"></span>Resiste el café hirviendo</div>
+      <div class="keys"><b style="color:#4ff79a">🌿 Hoja</b><br>Moverse <kbd>A</kbd><kbd>D</kbd> · Saltar <kbd>W</kbd><br>
+        <span class="dot" style="background:#0a8cff"></span>Resiste el agua</div>
+    </div>
+    <p><span class="dot" style="background:#7dff3a"></span>El ácido verde es mortal para los dos. Mantén presionado saltar para llegar más alto.</p>
+    <p>Lleven a uno de los dos a la terminal <b>¡RETO!</b>, resuelvan el problema y se abre la compuerta. La sala termina cuando Grano está en la puerta <b>G</b> y Hoja en la <b>H</b>.</p>
+    <table>
+      <tr><td>Resolver el reto de la sala</td><td><b>+100</b></td></tr>
+      <tr><td>Cada gema de tu color (2 por sala)</td><td><b>+10</b></td></tr>
+      <tr><td>Respuesta incorrecta / pista del asesor</td><td><b>−25</b></td></tr>
+      <tr><td>Caer en un charco que no resistes</td><td><b>−50</b></td></tr>
+      <tr><td>Caja fuerte al primer intento / código errado</td><td><b>+100 / −50</b></td></tr>
+    </table>
+    <p>⭐⭐⭐ por sala: todas las gemas, cero caídas y reto al primer intento sin pista. Ganan abriendo la caja con <b>400 puntos o más</b> (máximo 700).</p>
+    <div class="row"><button class="go" onclick="startGame()">▶ Empezar</button><button class="ghost" onclick="menu()">Volver</button></div>`, true);
+}
+function startGame(){
+  audio(); music(true);
+  score=0; gemsTotal=0; cifras=[]; deaths=0; wrongs=0; hints=0; cajaTries=0; starsAll=[]; startTime=Date.now(); elapsed=0;
+  loadLevel(0); intro();
+}
+function intro(){
+  state='intro';
+  show(`<div class="eyebrow">Sala ${lvl+1} de 5</div><h2>${['🏭','🏷️','☀️','📦','💰'][lvl]} ${SALAS[lvl].name}</h2>
+    <p>${SALAS[lvl].context}</p>
+    <ul class="obj"><li>⭐ Recojan las 2 gemas</li><li>⭐ Nadie se cae en un charco</li><li>⭐ Reto al primer intento y sin pista</li></ul>
+    <div class="row"><button class="go" onclick="play()">¡A jugar!</button></div>`, true);
+}
+function play(){ hide(); state='play'; Object.keys(keys).forEach(k=>keys[k]=false); }
+
+function openTerminal(){ state='modal'; Object.keys(keys).forEach(k=>keys[k]=false); SFX.door(); renderTerminal(''); }
+let lastExtra='';
+function renderTerminal(extra, showManual, shakeIt){
+  const s=SALAS[lvl];
+  show(`<div class="eyebrow">Terminal · Sala ${lvl+1} · ${s.name}</div>
+    <p>${s.context}</p>
+    <div class="formula"><b>${s.formula}</b><small>${s.vars}</small></div>
+    <div class="q">${s.question}</div>
+    <div class="opts">${s.options.map((o,i)=>`<button onclick="answer(${i})"><b>${'ABCD'[i]}</b>${o}</button>`).join('')}</div>
+    ${extra}${showManual?MANUAL:''}
+    <div class="row"><button class="hot" onclick="pista()">💡 Pista (−25)</button>
+      <button class="ghost" onclick="renderTerminal(lastExtra, ${!showManual})">${showManual?'Ocultar':'Ver'} manual</button>
+      <button class="ghost" onclick="closeTerminal()">Cerrar</button></div>`);
+  if(shakeIt){ card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); }
+  lastExtra=extra;
+}
+function pista(){
+  if(!L.hintUsed){ L.hintUsed=true; score=Math.max(0,score-25); hints++; updateHud(); }
+  renderTerminal(`<div class="msg hint">💡 ${SALAS[lvl].hint}</div>`);
+}
+function answer(i){
+  const s=SALAS[lvl];
+  if(i!==s.correct){ score=Math.max(0,score-25); wrongs++; L.wrongLocal++; updateHud(); SFX.wrong();
+    renderTerminal(`<div class="msg bad">✗ ${s.wrong} (−25)</div>`, false, true); return; }
+  score+=100; cifras[lvl]=s.cifra; updateHud(); SFX.right();
+  show(`<div class="eyebrow">Terminal · Sala ${lvl+1} · ${s.name}</div>
+    <h2 style="color:#0c9a4a">🎉 ¡Decisión correcta! +100</h2>
+    <div class="grid2"><div><b>Así se resuelve:</b><ol class="sol">${s.sol.map(l=>`<li>${l}</li>`).join('')}</ol>
+      <div class="msg good">Decisión gerencial: ${s.decision}</div></div>
+      <div style="text-align:center;background:linear-gradient(160deg,#3b1a8f,#24104a);border-radius:16px;padding:16px;color:#fff">
+        <div class="eyebrow" style="color:#1ed6ff">Cifra clave</div><div class="big">${s.cifra}</div><p>Guárdenla para la caja fuerte</p></div></div>
+    <div class="row"><button class="go" onclick="abrirCompuerta()">🔓 Abrir la compuerta</button></div>`);
+}
+function abrirCompuerta(){
+  L.gateOpen=true; hide(); state='play'; SFX.gate(); shake=8;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(L.grid[r][c]==='L') burst(c*T+16,r*T+16,'#ff4fa3',10,5);
+  floatText(L.terminal.c*T+16,L.terminal.r*T-30,'+100','#2ee87a');
+}
+function closeTerminal(){ L.cool=true; hide(); state='play'; }
+
+function levelDone(){
+  state='done';
+  const st=[L.gemsLocal===2, L.deathsLocal===0, L.wrongLocal===0 && !L.hintUsed];
+  starsAll[lvl]=st.filter(Boolean).length;
+  const last = lvl===4;
+  show(`<div class="eyebrow">Sala ${lvl+1} superada</div><h2>¡${SALAS[lvl].name} en orden!</h2>
+    <div class="stars">${st.map((on,i)=>`<span class="${on?'on':''}" style="animation-delay:${.15+i*.25}s">★</span>`).join('')}</div>
+    <table><tr><td>💎 Gemas en esta sala</td><td><b>${L.gemsLocal}/2</b> ${st[0]?'⭐':''}</td></tr>
+      <tr><td>💥 Caídas</td><td><b>${L.deathsLocal}</b> ${st[1]?'⭐':''}</td></tr>
+      <tr><td>🧠 Reto al primer intento sin pista</td><td><b>${st[2]?'Sí':'No'}</b> ${st[2]?'⭐':''}</td></tr>
+      <tr><td>🔑 Cifra clave</td><td><b>${SALAS[lvl].cifra}</b></td></tr>
+      <tr><td>Puntaje acumulado</td><td><b>${score}</b></td></tr></table>
+    <div class="row"><button class="go" onclick="${last?'caja()':'nextLevel()'}">${last?'🔐 Ir a la caja fuerte':'Siguiente sala ▶'}</button>
+      <button class="ghost" onclick="retrySala()">↻ Repetir sala por las estrellas</button></div>`, true);
+  [0,1,2].forEach(i=>{ if(st[i]) setTimeout(()=>tone(880+i*220,.12,'square',.08),(150+i*250)); });
+}
+let snap=null;
+function nextLevel(){ snap={score,gemsTotal,deaths,wrongs,hints,cifras:[...cifras]}; loadLevel(lvl+1); intro(); }
+function retrySala(){
+  const s = lvl===0 ? {score:0,gemsTotal:0,deaths:0,wrongs:0,hints:0,cifras:[]} : snap;
+  ({score,gemsTotal,deaths,wrongs,hints}=s); cifras=[...s.cifras]; loadLevel(lvl); intro();
+}
+
+function caja(msg=''){
+  state='caja';
+  show(`<div class="eyebrow">Junta directiva · 6:00 p.m.</div><h2>🔐 La caja fuerte</h2>
+    <p>El contrato de exportación está adentro. El código es la <b>suma de las cinco cifras clave</b> que ganaron. Si aciertan al primer intento: +100 puntos.</p>
+    <div class="row"><input id="code" class="code" type="number" inputmode="numeric" placeholder="??">
+      <button class="go" onclick="probarCodigo()">Abrir</button></div>${msg}`, true);
+  if(msg){ card.classList.add('shake'); }
+  setTimeout(()=>{ const i=$('code'); if(i){ i.focus(); i.onkeydown=e=>{ if(e.key==='Enter') probarCodigo(); }; } },50);
+}
+function probarCodigo(){
+  const v=parseInt($('code').value,10); cajaTries++;
+  if(v===CODIGO){ if(cajaTries===1) score+=100; updateHud(); final(); }
+  else { score=Math.max(0,score-50); updateHud(); SFX.wrong(); shake=10;
+    caja(`<div class="msg bad">🚨 ¡Alarma! Código incorrecto (−50). Revisen las cifras del marcador y vuelvan a sumarlas.</div>`); }
+}
+function final(){
+  state='end'; music(false); SFX.win(); for(let i=0;i<140;i++) setTimeout(confetti,i*12);
+  const s=Math.floor(elapsed/1000), t=`${Math.floor(s/60)} min ${s%60} s`, stars=starsAll.reduce((a,b)=>a+(b||0),0);
+  const newRec = score>best; if(newRec){ best=score; try{ localStorage.setItem('gpud_best',best); }catch(e){} }
+  const rank = score>=550 ? ['🏆 ¡Gerentes estrella!','La junta está impresionada: cada decisión se tomó con números exactos. ¡Los nombran gerentes generales!']
+            : score>=400 ? ['⭐ ¡Empresa salvada!','Café Andino sobrevive y firma el contrato. Algunas decisiones costaron caro, pero la empresa sigue en pie.']
+            : ['⚠️ Empresa en quiebra','Abrieron la caja, pero hubo demasiados errores y el presupuesto no alcanzó. ¿Otra partida para salvarla?'];
+  show(`<div class="eyebrow">Resultado final</div><h1>${rank[0]}</h1><p>${rank[1]}</p>
+    ${newRec?'<p><span class="record">🎉 ¡Nuevo récord!</span></p>':`<p><span class="record">🏆 Récord: ${best}</span></p>`}
+    <div class="grid2"><table>
+      <tr><td>Puntaje final</td><td><b>${score} / 700</b></td></tr>
+      <tr><td>Estrellas</td><td><b>${stars} / 15 ⭐</b></td></tr>
+      <tr><td>Gemas</td><td><b>${gemsTotal}/10</b></td></tr>
+      <tr><td>Respuestas incorrectas</td><td><b>${wrongs}</b></td></tr>
+      <tr><td>Pistas · Caídas</td><td><b>${hints} · ${deaths}</b></td></tr>
+      <tr><td>Tiempo</td><td><b>${t}</b></td></tr></table>
+      <div class="keys"><b>📈 Las decisiones del equipo</b><ul style="margin:6px 0 0 18px;padding:0">
+        ${SALAS.map(x=>`<li>${x.name}: ${x.short}</li>`).join('')}</ul></div></div>
+    <div class="row"><button class="go" onclick="startGame()">↻ Jugar de nuevo</button><button class="ghost" onclick="menu()">Menú</button></div>`, true);
+}
+
+menu(); loop();
+</script>
+</body>
+</html>
